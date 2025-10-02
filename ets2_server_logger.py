@@ -9,10 +9,10 @@ import requests
 # --------------------------------------------------------
 # Konfiguration
 # --------------------------------------------------------
-BOT_TOKEN = "xxxxxxxxxxxxxxxxxxxxxxxxxxxx"  # Dein Bot-Token
-WEBHOOK_URL = "https://discord.com/api/webhooks"  # Webhook-URL für Chat-Log-Embeds (leer lassen = deaktiviert)
-GUILD_ID = 1234567890    # Discord-Server-ID
-LOG_PATH = r"C:\Users\DEINNAME\Documents\Euro Truck Simulator 2\server.log.txt"
+BOT_TOKEN = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"  # Dein Bot-Token
+WEBHOOK_URL = "discord.com/api/webhooks"  # Webhook-URL für Chat-Log-Embeds (leer lassen = deaktiviert)
+GUILD_ID = 12345678987654    # Discord-Server-ID
+LOG_PATH = r"C:\Users\YOURNAME\Documents\Euro Truck Simulator 2\server.log.txt"
 
 
 # --------------------------------------------------------
@@ -51,12 +51,10 @@ def make_embed(title: str, description: str, color=discord.Color.blue()) -> disc
         timestamp=datetime.datetime.now()
     )
 
-    # ✅ Hier dein Logo einfügen (URL zu einem Bild)
-    embed.set_thumbnail(url="https://i.imgur.com/5x4tt8L.png")  # <-- Ersetze durch dein Logo
-
+    # Logo links einfügen (Thumbnail)
+    embed.set_thumbnail(url="https://i.imgur.com/5x4tt8L.png")  # <-- ersetze durch dein Logo
     embed.set_footer(text="🚚 ETS2LS By ISMIREGAL")
     return embed
-
 
 
 # --------------------------------------------------------
@@ -159,7 +157,7 @@ def send_to_discord(message: str):
     if not WEBHOOK_URL:
         return
     try:
-        embed = make_embed("💬 ETS2 Chat-Log", message, color=discord.Color.green())
+        embed = make_embed("💬 ETS2 Server-Log", message, color=discord.Color.green())
         payload = {"embeds": [embed.to_dict()]}
         response = requests.post(WEBHOOK_URL, json=payload)
         if response.status_code not in (200, 204):
@@ -184,12 +182,27 @@ def tail_log(file_path):
 
 
 def log_watcher():
-    """Überwacht die ETS2-Logdatei und postet Chat-Zeilen in Discord."""
-    print("🚚 Starte ETS2 Server-Logger (nur [MP] [Chat]-Zeilen)...")
+    """Überwacht die ETS2-Logdatei und postet Chat + Join/Leave in Discord."""
+    print("🚚 Starte ETS2 Server-Logger (Chat, Join/Leave)...")
     print(f"Überwache: {LOG_PATH}")
     for line in tail_log(LOG_PATH):
-        if "[mp] [chat]" in line.lower():
-            msg = line.strip()
+        l = line.lower()
+
+        # Chat
+        if "[mp] [chat]" in l:
+            msg = f"💬 {line.strip()}"
+            send_to_discord(msg)
+            print(msg)
+
+        # Spieler beigetreten
+        elif "joined the server" in l or "connected" in l:
+            msg = f"✅ Spieler beigetreten: {line.strip()}"
+            send_to_discord(msg)
+            print(msg)
+
+        # Spieler hat verlassen
+        elif "left the server" in l or "disconnected" in l:
+            msg = f"❌ Spieler hat den Server verlassen: {line.strip()}"
             send_to_discord(msg)
             print(msg)
 
